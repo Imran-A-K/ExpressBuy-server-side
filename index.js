@@ -57,6 +57,7 @@ async function run() {
         const usersCollection = client.db("expressBuy").collection("users");
         const cartCollection = client.db("expressBuy").collection("cart");
         const orderCollection = client.db("expressBuy").collection("orders");
+        const orderGroupCollection = client.db("expressBuy").collection("orderGroup");
 
         // jwt token sender api
 
@@ -168,11 +169,13 @@ async function run() {
       app.post('/confirm-order',validateJWT, async(req,res)=>{
         try{
             const customerEmail = req.query?.customerEmail;
+            const customerOrder = req?.body
             const cartItems = await cartCollection.find({ customerEmail }).toArray();
             const removeFromCart = await cartCollection.deleteMany({ customerEmail });
             const orderedItems = cartItems.map(({ _id, ...rest }) => rest);
             const result = await orderCollection.insertMany(orderedItems)
-            console.log(result)
+            const insertCustomerOrder = await orderGroupCollection.insertOne(customerOrder)
+            console.log(result,insertCustomerOrder)
             res.send(result);
         }
         catch (error) {
@@ -211,6 +214,11 @@ async function run() {
       }
       const result = await usersCollection.updateOne(filter, updateRole);
       res.send(result);
+    })
+    //api for displaying order summary of all orders at admin dashboard
+    app.get('/all-orders', validateJWT, async(req,res)=>{
+      const result = await orderGroupCollection.find().toArray()
+      res.send(result)
     })
   
     // api for displaying newest products at admin dashboard product list

@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 
 // installing middle wares
@@ -144,11 +144,41 @@ async function run() {
       })
 
       // delete selected product from cart api for customer
-    app.delete('/cutomer-selected-product', validateJWT, async (req, res) => {
+    app.delete('/customer-selected-product', validateJWT, async (req, res) => {
         const id = req.query?.id;
         const query = { _id: new ObjectId(id) }
         const result = await cartCollection.deleteOne(query)
         res.send(result);
+      })
+      // clearing or deleting every product from cart
+      app.delete('/customer-cart-products', validateJWT, async (req, res) => {
+        
+        try{
+            const customerEmail = req.query?.customerEmail;
+        const result = await cartCollection.deleteMany({ customerEmail });
+        // console.log(result)
+        res.send(result);
+        }
+        catch (error) {
+            console.error('Error:', error);
+            res.status(500).json({ error: 'An error occurred' });
+          }
+      })
+      // confirming orders api for user
+      app.post('/confirm-order',validateJWT, async(req,res)=>{
+        try{
+            const customerEmail = req.query?.customerEmail;
+            const cartItems = await cartCollection.find({ customerEmail }).toArray();
+            const removeFromCart = await cartCollection.deleteMany({ customerEmail });
+            const orderedItems = cartItems.map(({ _id, ...rest }) => rest);
+            const result = await orderCollection.insertMany(orderedItems)
+            console.log(result)
+            res.send(result);
+        }
+        catch (error) {
+            console.error('Error:', error);
+            res.status(500).json({ error: 'An error occurred' });
+          }
       })
   
         // user role getting api 

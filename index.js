@@ -122,7 +122,23 @@ async function run() {
         res.send(result)
       })
   
+        // user role getting api 
+    app.get('/user-role/:email', validateJWT, async (req, res) => {
 
+        try {
+  
+          const email = req.params.email;
+          const user = await usersCollection.findOne({ email });
+          if (!user) {
+            return res.status(404).send({ error: 'User not found' });
+          }
+          const role = user.role;
+  
+          res.send({ role });
+        } catch (error) {
+          res.status(500).send({ error: 'Server error' });
+        }
+      })
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });

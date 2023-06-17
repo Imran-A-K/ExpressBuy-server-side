@@ -180,6 +180,38 @@ async function run() {
             res.status(500).json({ error: 'An error occurred' });
           }
       })
+      // api for user's order
+      app.get('/my-orders', validateJWT, async(req,res)=>{
+        try{
+            const customerEmail = req.query?.customerEmail;
+            const result = await orderCollection.find({customerEmail}).toArray();
+        res.send(result)
+        }
+        catch (error) {
+            console.error('Error:', error);
+            res.status(500).json({ error: 'An error occurred' });
+          }
+      })
+
+      // getting all users to display at admin-dashboard manage users page
+    app.get('/users', validateJWT, async (req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    })
+
+    
+    // api for admin to make the user an admin
+    app.patch('/users/make-admin/:userId', validateJWT, async (req, res) => {
+      const userId = req.params.userId;
+      const filter = { _id: new ObjectId(userId) }
+      const updateRole = {
+        $set: {
+          role: 'admin'
+        }
+      }
+      const result = await usersCollection.updateOne(filter, updateRole);
+      res.send(result);
+    })
   
         // user role getting api 
     app.get('/user-role/:email', validateJWT, async (req, res) => {

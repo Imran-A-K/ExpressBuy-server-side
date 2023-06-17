@@ -56,6 +56,7 @@ async function run() {
         const productCollection = client.db('expressBuy').collection('products');
         const usersCollection = client.db("expressBuy").collection("users");
         const cartCollection = client.db("expressBuy").collection("cart");
+        const orderCollection = client.db("expressBuy").collection("orders");
 
         // jwt token sender api
 
@@ -120,6 +121,34 @@ async function run() {
             customerEmail : email};
         const result = await cartCollection.find(query).toArray();
         res.send(result)
+      })
+
+      // api for getting total product charge and shipment charge of the user's cart
+      app.get('/carts/user-cart-products-total-price', validateJWT, async(req,res)=>{
+        try{
+            const { customerEmail } = req.query;
+        const cartItems = await cartCollection.find({ customerEmail }).toArray();
+        let totalPrice = 0;
+        let totalShipping = 0;
+        cartItems.forEach((item) => {
+            totalPrice += item.price;
+            totalShipping += item.shipping;
+          });
+          const totalProducts = cartItems.length;
+          res.send({ totalPrice, totalShipping,totalProducts });
+        }
+        catch (error) {
+            console.error('Error:', error);
+            res.status(500).json({ error: 'An error occurred' });
+          }
+      })
+
+      // delete selected product from cart api for customer
+    app.delete('/cutomer-selected-product', validateJWT, async (req, res) => {
+        const id = req.query?.id;
+        const query = { _id: new ObjectId(id) }
+        const result = await cartCollection.deleteOne(query)
+        res.send(result);
       })
   
         // user role getting api 

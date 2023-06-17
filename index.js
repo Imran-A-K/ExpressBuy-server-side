@@ -105,6 +105,22 @@ async function run() {
         const result = await cartCollection.insertOne(newCart)
         res.send(result)
       })
+      // api for getting products in user's cart 
+    app.get('/carts', validateJWT, async(req, res) => {
+        const email = req.query?.email;
+        if(!email){
+          return res.send([]);
+        }
+        const decodedEmail = req.decoded.email // getting the decoded email from the response of jwt
+        if(email !== decodedEmail){
+          //adding extra level of security
+          return res.status(403).send({error: true, message: 'forbidden access'})
+        }
+        const query = { 
+            customerEmail : email};
+        const result = await cartCollection.find(query).toArray();
+        res.send(result)
+      })
   
 
 

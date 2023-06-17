@@ -8,7 +8,7 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 
 // installing middle wares
 const app = express()
-const port = process.env.PORT || 5000
+const port = process.env.PORT || 4000
 
 // handling cors
 const corsOptions = {
@@ -54,21 +54,8 @@ async function run() {
 
 
         const productCollection = client.db('expressBuy').collection('products');
-
-        // get all the products
-        app.get('/products', async (req, res) => {
-            const page = parseInt(req.query.page) || 0;
-            const limit = parseInt(req.query.limit) || 10;
-            const skip = page * limit
-            const result = await productCollection.find().skip(skip).limit(limit).toArray();
-            res.send(result);
-        })
-
-        // get total products count
-        app.get('/totalProducts', async (req, res) => {
-            const result = await productCollection.estimatedDocumentCount();
-            res.send({ totalProducts: result });
-        })
+        const usersCollection = client.db("expressBuy").collection("users");
+        const cartCollection = client.db("expressBuy").collection("cart");
 
         // jwt token sender api
 
@@ -81,7 +68,44 @@ async function run() {
 
             res.send({ token });
         })
+        
+        // get all the products
+        app.get('/products', async (req, res) => {
+            const page = parseInt(req.query.page) || 0;
+            const limit = parseInt(req.query.limit) || 10;
+            const skip = page * limit
+            const result = await productCollection.find().skip(skip).limit(limit).toArray();
+            res.send(result);
+        })
 
+        // get total products count
+        app.get('/totalProducts', async (req, res) => {
+            const result = await productCollection.estimatedDocumentCount();
+            // const result = await productCollection.find().toArray();
+            res.send({ totalProducts: result });
+        })
+
+        
+
+        // registering first time user as customer
+    app.post('/register-new-user', async (req, res) => {
+        const requester = req.body
+        const query = { email: requester.email }
+        const alreadyRegistered = await usersCollection.findOne(query)
+        if (alreadyRegistered) {
+          return res.send({ message: 'You are already registered' })
+        }
+        const result = await usersCollection.insertOne(requester);
+        res.send(result);
+      })
+
+      // adding product to cart api for customer
+    app.post('/add-to-cart', validateJWT, async (req, res) => {
+        const newCart = req.body
+        const result = await cartCollection.insertOne(newCart)
+        res.send(result)
+      })
+  
 
 
         // Send a ping to confirm a successful connection

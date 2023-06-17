@@ -213,6 +213,15 @@ async function run() {
       res.send(result);
     })
   
+    // api for displaying newest products at admin dashboard product list
+    app.get('/newest-products', async (req, res) => {
+      const page = parseInt(req.query.page) || 0;
+  const limit = parseInt(req.query.limit) || 10;
+  const totalProducts = await productCollection.countDocuments();
+  const skip = Math.max(totalProducts - (page + 1) * limit, 0);
+  const result = await productCollection.find().skip(skip).limit(limit).toArray();
+  res.send(result);
+    });
         // user role getting api 
     app.get('/user-role/:email', validateJWT, async (req, res) => {
 
